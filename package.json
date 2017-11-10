@@ -1,0 +1,12 @@
+{
+  "name": "cordova-plugin-braintree",
+  "version": "1.0.0",
+  "cordova": {
+    "id": "cordova-plugin-braintree",
+    "platforms": [
+      "android",
+      "ios",
+    ]
+  },
+  "description": "Cordova plugin for Braintree"
+}

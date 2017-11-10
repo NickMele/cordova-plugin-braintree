@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+    id="cordova-plugin-braintree"
+    version="1.0.0">
+    <name>Cordova Plugin Template</name>
+    <description></description>
+    <license>MIT</license>
+    <keywords>cordova,braintree</keywords>
+    <repo>https://github.com/NickMele/cordova-plugin-braintree.git</repo>
+    <issue>https://github.com/NickMele/cordova-plugin-braintree/issues</issue>
+
+    <js-module src="www/plugin.js" name="Braintree">
+      <runs/>
+
+      <!-- This is the window variable name you want, like window.MyCordovaPlugin -->
+      <clobbers target="plugins.Braintree" />
+    </js-module>
+
+    <!-- android -->
+    <platform name="android">
+      <config-file target="res/xml/config.xml" parent="/*">
+        <feature name="Braintree">
+          <param name="android-package" value="com.example.BraintreePlugin" />
+          <param name="onload" value="true" />
+        </feature>
+      </config-file>
+
+      <source-file src="src/android/com/example/BraintreePlugin.java" target-dir="src/com/example/" />
+    </platform>
+
+    <!-- ios -->
+    <platform name="ios">
+      <config-file target="config.xml" parent="/*">
+        <feature name="Braintree">
+          <param name="ios-package" value="BraintreePlugin" onload="true" />
+        </feature>
+      </config-file>
+
+      <header-file src="src/ios/BraintreePlugin.h" />
+      <source-file src="src/ios/BraintreePlugin.m" />
+    </platform>
+</plugin>
