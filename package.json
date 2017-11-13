@@ -5,7 +5,7 @@
     "id": "cordova-plugin-braintree",
     "platforms": [
       "android",
-      "ios",
+      "ios"
     ]
   },
   "description": "Cordova plugin for Braintree"

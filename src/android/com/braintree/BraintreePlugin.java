@@ -1,6 +1,6 @@
 /**
  */
-package com.example;
+package com.braintree;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;

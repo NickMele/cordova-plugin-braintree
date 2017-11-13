@@ -1,14 +1,25 @@
-
 var exec = require('cordova/exec');
 
 var PLUGIN_NAME = 'BraintreePlugin';
 
 var BraintreePlugin = {
-  echo: function(phrase, cb) {
-    exec(cb, null, PLUGIN_NAME, 'echo', [phrase]);
+  initialize: function(clientToken) {
+    cordova.exec(
+      success,
+      failure,
+      PLUGIN_NAME,
+      'initialize',
+      [clientToken]
+    );
   },
-  getDate: function(cb) {
-    exec(cb, null, PLUGIN_NAME, 'getDate', []);
+  isVenmoAvailable: function() {
+    cordova.exec(
+      success,
+      failure,
+      PLUGIN_NAME,
+      'isVenmoAvailable',
+      []
+    );
   }
 };
 

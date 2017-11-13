@@ -3,7 +3,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
     id="cordova-plugin-braintree"
     version="1.0.0">
-    <name>Cordova Plugin Template</name>
+    <name>Cordova Plugin Braintree</name>
     <description></description>
     <license>MIT</license>
     <keywords>cordova,braintree</keywords>
@@ -21,23 +21,43 @@
     <platform name="android">
       <config-file target="res/xml/config.xml" parent="/*">
         <feature name="Braintree">
-          <param name="android-package" value="com.example.BraintreePlugin" />
+          <param name="android-package" value="com.braintree.BraintreePlugin" />
           <param name="onload" value="true" />
         </feature>
       </config-file>
 
-      <source-file src="src/android/com/example/BraintreePlugin.java" target-dir="src/com/example/" />
+      <source-file src="src/android/com/braintree/BraintreePlugin.java" target-dir="src/com/braintree/" />
     </platform>
 
     <!-- ios -->
     <platform name="ios">
       <config-file target="config.xml" parent="/*">
-        <feature name="Braintree">
+        <feature name="BraintreePlugin">
           <param name="ios-package" value="BraintreePlugin" onload="true" />
         </feature>
       </config-file>
 
+      <framework src="Braintree/Core" type="podspec" spec="~> 4.9.5" />
+      <framework src="Braintree/Venmo" type="podspec" spec="~> 4.9.5" />
+
       <header-file src="src/ios/BraintreePlugin.h" />
       <source-file src="src/ios/BraintreePlugin.m" />
+
+      <edit-config target="*-Info.plist" parent="CFBundleURLTypes">
+        <array>
+          <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+              <string>$PACKAGE_NAME.payments</string>
+            </array>
+          </dict>
+        </array>
+      </edit-config>
+
+      <edit-config target="*-Info.plist" parent="LSApplicationQueriesSchemes">
+        <array>
+          <string>com.venmo.touch.v2</string>
+        </array>
+      </edit-config>
     </platform>
 </plugin>
