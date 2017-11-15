@@ -81,8 +81,8 @@
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
         [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
       } else {
-        NSLog(@"Unable to complete venmo payment");
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Unable to complete venmo payment"];
+        NSLog(@"User cancelled venmo request");
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"User cancelled venmo request"];
         [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
       }
     }];
