@@ -12,30 +12,256 @@ import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import com.braintreepayments.api.BraintreeFragment;
+import com.braintreepayments.api.Venmo;
+import com.braintreepayments.api.exceptions.InvalidArgumentException;
+import com.braintreepayments.api.exceptions.AppSwitchNotAvailableException;
+import com.braintreepayments.api.interfaces.ConfigurationListener;
+import com.braintreepayments.api.interfaces.PaymentMethodNonceCreatedListener;
+import com.braintreepayments.api.interfaces.BraintreeCancelListener;
+import com.braintreepayments.api.interfaces.BraintreeErrorListener;
+import com.braintreepayments.api.models.Configuration;
+import com.braintreepayments.api.models.PaymentMethodNonce;
+import com.braintreepayments.api.models.VenmoAccountNonce;
+
 import android.util.Log;
+import android.content.Context;
+import android.app.Activity;
 
 import java.util.Date;
 
 public class BraintreePlugin extends CordovaPlugin {
+
   private static final String TAG = "BraintreePlugin";
 
-  public void initialize(CordovaInterface cordova, CordovaWebView webView) {
-    super.initialize(cordova, webView);
+  private boolean isAvailable = false;
+  private boolean configurationFetched = false;
+  private Activity activity;
+  protected BraintreeFragment mBraintreeFragment;
+  private CallbackContext availabilityCallbackContext;
+  private CallbackContext venmoAuthorizationCallbackContext;
+  private ConfigurationListener configurationListener;
+  private PaymentMethodNonceCreatedListener paymentMethodNonceCreatedListener;
+  private BraintreeErrorListener braintreeErrorListener;
+  private BraintreeCancelListener braintreeCancelListener;
 
-    Log.d(TAG, "Initializing BraintreePlugin");
+  @Override
+  protected void pluginInitialize() {
+    Log.d(TAG, "Starting Braintree Cordova Plugin");
+    activity = this.cordova.getActivity();
+  }
+
+  @Override
+  public void onDestroy() {
+    removeListeners();
+
+    super.onDestroy();
   }
 
   public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) throws JSONException {
-    if(action.equals("echo")) {
-      String phrase = args.getString(0);
-      // Echo back the first argument
-      Log.d(TAG, phrase);
-    } else if(action.equals("getDate")) {
-      // An example of returning data back to the web layer
-      final PluginResult result = new PluginResult(PluginResult.Status.OK, (new Date()).toString());
-      callbackContext.sendPluginResult(result);
+    if (action.equals("initialize")) {
+      String clientToken = args.getString(0);
+
+      createBraintreeFragment(clientToken, callbackContext);
+    } else if (action.equals("isVenmoAvailable")) {
+      Log.d(TAG, "Storing isVenmoAvailable callback for when configuration is fetched");
+      availabilityCallbackContext = callbackContext;
+
+      if (configurationFetched) {
+        sendAvailabilityUpdate();
+      }
+    } else if (action.equals("authorizeVenmoAccount")) {
+      if (mBraintreeFragment != null) {
+        Log.d(TAG, "Authorizing venmo account");
+
+        venmoAuthorizationCallbackContext = callbackContext;
+
+        cordova.getThreadPool().execute(new Runnable() {
+          public void run() {
+            Venmo.authorizeAccount(mBraintreeFragment, false);
+          }
+        });
+      } else {
+        Log.d(TAG, "No braintree fragment found");
+
+        callbackContext.error("This device cannot make venmo payments");
+      }
     }
+
     return true;
   }
 
+  private void createBraintreeFragment(String clientToken, CallbackContext callbackContext) {
+    Log.d(TAG, "Creating braintree fragment");
+
+    try {
+      mBraintreeFragment = BraintreeFragment.newInstance(activity, clientToken);
+    } catch (InvalidArgumentException e) {
+      Log.d(TAG, "Error creating braintree fragment: " + e.toString());
+
+      callbackContext.error(e.toString());
+    }
+
+    addListeners();
+    callbackContext.success();
+  }
+
+  private void addListeners() {
+    Log.d(TAG, "Adding fragment listeners");
+
+    if (configurationListener == null) {
+      configurationListener = new ConfigurationListener() {
+        @Override
+        public void onConfigurationFetched(Configuration configuration) {
+          Log.d(TAG, "Configuration fetched");
+          btConfigurationFetched(configuration);
+        }
+      };
+      mBraintreeFragment.addListener(configurationListener);
+    }
+
+    if (paymentMethodNonceCreatedListener == null) {
+      paymentMethodNonceCreatedListener = new PaymentMethodNonceCreatedListener() {
+        @Override
+        public void onPaymentMethodNonceCreated(PaymentMethodNonce paymentMethodNonce) {
+          Log.d(TAG, "Payment method nonce created");
+          btPaymentMethodNonceCreated(paymentMethodNonce);
+        }
+      };
+      mBraintreeFragment.addListener(paymentMethodNonceCreatedListener);
+    }
+
+    if (braintreeErrorListener == null) {
+      braintreeErrorListener = new BraintreeErrorListener() {
+        @Override
+        public void onError(Exception error) {
+          Log.d(TAG, "Braintree error");
+          btError(error);
+        }
+      };
+      mBraintreeFragment.addListener(braintreeErrorListener);
+    }
+
+    if (braintreeCancelListener == null) {
+      braintreeCancelListener = new BraintreeCancelListener() {
+        @Override
+        public void onCancel(int requestCode) {
+          Log.d(TAG, "Braintree activity cancelled");
+          btCancel(requestCode);
+        }
+      };
+      mBraintreeFragment.addListener(braintreeCancelListener);
+    }
+  }
+
+  private void removeListeners() {
+    Log.d(TAG, "Removing braintree listeners");
+
+    if (mBraintreeFragment != null) {
+      if (configurationListener != null) {
+        mBraintreeFragment.removeListener(configurationListener);
+      }
+      if (paymentMethodNonceCreatedListener != null) {
+        mBraintreeFragment.removeListener(paymentMethodNonceCreatedListener);
+      }
+      if (braintreeErrorListener != null) {
+        mBraintreeFragment.removeListener(braintreeErrorListener);
+      }
+      if (braintreeCancelListener != null) {
+        mBraintreeFragment.removeListener(braintreeCancelListener);
+      }
+    }
+  }
+
+  private void sendAvailabilityUpdate() {
+    Log.d(TAG, "Sending venmo availability update to webview");
+
+    if (availabilityCallbackContext != null) {
+      if (isAvailable) {
+        availabilityCallbackContext.success();
+      } else {
+        availabilityCallbackContext.error("This device cannot make venmo payments");
+      }
+
+      availabilityCallbackContext = null;
+    }
+
+    webView.postMessage("braintree.venmo.isAvailable", isAvailable);
+  }
+
+  private void btConfigurationFetched(Configuration configuration) {
+    Context context = this.cordova.getActivity().getApplicationContext();
+
+    if (configuration.getPayWithVenmo().isEnabled(context)) {
+      isAvailable = true;
+      Log.d(TAG, "Venmo available");
+    } else if (configuration.getPayWithVenmo().isAccessTokenValid()) {
+      isAvailable = false;
+      Log.d(TAG, "Venmo app not installed");
+    } else {
+      isAvailable = false;
+      Log.d(TAG, "Venmo not enabled for merchant");
+    }
+
+    if (availabilityCallbackContext != null) {
+      sendAvailabilityUpdate();
+    }
+
+    configurationFetched = true;
+  }
+
+  private void btPaymentMethodNonceCreated(PaymentMethodNonce paymentMethodNonce) {
+    String nonce = paymentMethodNonce.getNonce();
+
+    Log.d(TAG, "Nonce received: " + nonce);
+
+    if (paymentMethodNonce instanceof VenmoAccountNonce) {
+      Log.d(TAG, "Nonce is a VenmoAccountNonce");
+      VenmoAccountNonce venmoAccountNonce = (VenmoAccountNonce) paymentMethodNonce;
+      String venmoUsername = venmoAccountNonce.getUsername();
+
+      if (venmoAuthorizationCallbackContext != null) {
+        JSONObject response = new JSONObject();
+
+        try {
+          response.put("nonce", nonce);
+          response.put("username", venmoUsername);
+        } catch (JSONException e) {
+          e.printStackTrace();
+          venmoAuthorizationCallbackContext.error("Unable to get authorization data");
+          venmoAuthorizationCallbackContext = null;
+          return;
+        }
+
+        Log.d(TAG, "Venmo authorization response: " + response.toString());
+
+        venmoAuthorizationCallbackContext.success(response);
+        venmoAuthorizationCallbackContext = null;
+      }
+    }
+  }
+
+  private void btError(Exception error) {
+    String developerReadableMessage = error.getMessage();
+
+    Log.d(TAG, "Braintree error: " + developerReadableMessage);
+
+    if (error instanceof AppSwitchNotAvailableException) {
+      Log.d(TAG, "Braintree is unable to switch to the Venmo app");
+
+      if (venmoAuthorizationCallbackContext != null) {
+        venmoAuthorizationCallbackContext.error("Braintree is unable to switch to the Venmo app.");
+        venmoAuthorizationCallbackContext = null;
+      }
+    }
+  }
+
+  private void btCancel(int requestCode) {
+    Log.d(TAG, "User cancelled venmo request: " + requestCode);
+
+    if (venmoAuthorizationCallbackContext != null) {
+      venmoAuthorizationCallbackContext.error("User cancelled venmo request");
+      venmoAuthorizationCallbackContext = null;
+    }
+  }
 }

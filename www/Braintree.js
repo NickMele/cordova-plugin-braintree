@@ -3,7 +3,7 @@ var exec = require('cordova/exec');
 var PLUGIN_NAME = 'BraintreePlugin';
 
 var BraintreePlugin = {
-  initialize: function(clientToken) {
+  initialize: function(clientToken, success, failure) {
     cordova.exec(
       success,
       failure,
@@ -12,12 +12,21 @@ var BraintreePlugin = {
       [clientToken]
     );
   },
-  isVenmoAvailable: function() {
+  isVenmoAvailable: function(success, failure) {
     cordova.exec(
       success,
       failure,
       PLUGIN_NAME,
       'isVenmoAvailable',
+      []
+    );
+  },
+  authorizeVenmoAccount: function(success, failure) {
+    cordova.exec(
+      success,
+      failure,
+      PLUGIN_NAME,
+      'authorizeVenmoAccount',
       []
     );
   }

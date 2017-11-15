@@ -10,40 +10,52 @@
     <repo>https://github.com/NickMele/cordova-plugin-braintree.git</repo>
     <issue>https://github.com/NickMele/cordova-plugin-braintree/issues</issue>
 
-    <js-module src="www/plugin.js" name="Braintree">
+    <js-module src="www/Braintree.js" name="Braintree">
       <runs/>
 
-      <!-- This is the window variable name you want, like window.MyCordovaPlugin -->
       <clobbers target="plugins.Braintree" />
     </js-module>
 
     <!-- android -->
     <platform name="android">
       <config-file target="res/xml/config.xml" parent="/*">
-        <feature name="Braintree">
+        <feature name="BraintreePlugin">
           <param name="android-package" value="com.braintree.BraintreePlugin" />
-          <param name="onload" value="true" />
         </feature>
       </config-file>
 
+      <config-file target="AndroidManifest.xml" parent="application">
+        <activity android:name="com.braintreepayments.api.BraintreeBrowserSwitchActivity" android:launchMode="singleTask">
+          <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="${applicationId}.braintree" />
+          </intent-filter>
+        </activity>
+      </config-file>
+
       <source-file src="src/android/com/braintree/BraintreePlugin.java" target-dir="src/com/braintree/" />
+
+      <framework src="com.braintreepayments.api:braintree:2.+" />
     </platform>
 
     <!-- ios -->
     <platform name="ios">
-      <config-file target="config.xml" parent="/*">
-        <feature name="BraintreePlugin">
-          <param name="ios-package" value="BraintreePlugin" onload="true" />
-        </feature>
-      </config-file>
-
       <framework src="Braintree/Core" type="podspec" spec="~> 4.9.5" />
       <framework src="Braintree/Venmo" type="podspec" spec="~> 4.9.5" />
 
       <header-file src="src/ios/BraintreePlugin.h" />
       <source-file src="src/ios/BraintreePlugin.m" />
 
-      <edit-config target="*-Info.plist" parent="CFBundleURLTypes">
+      <config-file target="config.xml" parent="/*">
+        <feature name="BraintreePlugin">
+          <param name="ios-package" value="BraintreePlugin" />
+          <param name="onload" value="true" />
+        </feature>
+      </config-file>
+
+      <config-file target="*-Info.plist" parent="CFBundleURLTypes">
         <array>
           <dict>
             <key>CFBundleURLSchemes</key>
@@ -52,12 +64,12 @@
             </array>
           </dict>
         </array>
-      </edit-config>
+      </config-file>
 
-      <edit-config target="*-Info.plist" parent="LSApplicationQueriesSchemes">
+      <config-file target="*-Info.plist" parent="LSApplicationQueriesSchemes">
         <array>
           <string>com.venmo.touch.v2</string>
         </array>
-      </edit-config>
+      </config-file>
     </platform>
 </plugin>

@@ -1,4 +1,5 @@
 #import <Cordova/CDVPlugin.h>
+
 #import "BraintreeCore.h"
 #import "BraintreeVenmo.h"
 
@@ -11,5 +12,6 @@
 
 - (void)initialize:(CDVInvokedUrlCommand*)command;
 - (void)isVenmoAvailable:(CDVInvokedUrlCommand*)command;
+- (void)authorizeVenmoAccount:(CDVInvokedUrlCommand*)command;
 
 @end
