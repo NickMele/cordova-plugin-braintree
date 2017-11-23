@@ -1,12 +1,12 @@
 #import "BraintreePlugin.h"
 #import <Cordova/CDVAvailability.h>
 
-static short int *const ERROR_PLUGIN_NOT_INITIALIZED = 1;
-static short int *const ERROR_INITIALIZATION_ERROR = 2;
-static short int *const ERROR_VENMO_NOT_AVAILABLE = 3;
-static short int *const ERROR_AUTHORIZATION_ERROR = 4;
-static short int *const ERROR_USER_CANCELLED_AUTHORIZATION = 5;
-static short int *const ERROR_VENMO_NOT_ENABLED_FOR_MERCHANT = 6;
+static NSInteger const ERROR_PLUGIN_NOT_INITIALIZED = 1;
+static NSInteger const ERROR_INITIALIZATION_ERROR = 2;
+static NSInteger const ERROR_VENMO_NOT_AVAILABLE = 3;
+static NSInteger const ERROR_AUTHORIZATION_ERROR = 4;
+static NSInteger const ERROR_USER_CANCELLED_AUTHORIZATION = 5;
+static NSInteger const ERROR_VENMO_NOT_ENABLED_FOR_MERCHANT = 6;
 
 @implementation BraintreePlugin
 
@@ -43,12 +43,15 @@ static short int *const ERROR_VENMO_NOT_ENABLED_FOR_MERCHANT = 6;
 - (void)initialize:(CDVInvokedUrlCommand*)command {
   NSString *clientToken = command.arguments[0];
 
-  NSLog(@"Setting apiClient and venmoDriver");
+  NSLog(@"Setting apiClient");
 
   self.apiClient = [[BTAPIClient alloc] initWithAuthorization:clientToken];
 
   if (self.apiClient) {
+    NSLog(@"Setting venmoDriver");
     self.venmoDriver = [[BTVenmoDriver alloc] initWithAPIClient:self.apiClient];
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
   } else {
     NSLog(@"Failed to initialize the API Client");
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:[self getErrorMessage:ERROR_INITIALIZATION_ERROR message:@"Failed to initialize the API Client"]];
@@ -106,18 +109,19 @@ static short int *const ERROR_VENMO_NOT_ENABLED_FOR_MERCHANT = 6;
   }
 }
 
-- (NSMutableDictionary *)getErrorMessage:(short int *)errorCode {
+- (NSMutableDictionary *)getErrorMessage:(NSUInteger)errorCode {
   NSMutableDictionary *result = [[NSMutableDictionary alloc] init];
 
-  [result setObject:errorCode forKey:@"errorCode"];
+  [result setObject:[NSNumber numberWithInteger:errorCode] forKey:@"errorCode"];
 
   return result;
 }
 
-- (NSMutableDictionary *)getErrorMessage:(short int *)errorCode message:(NSString *)message {
+
+- (NSMutableDictionary *)getErrorMessage:(NSUInteger)errorCode message:(NSString *)message {
   NSMutableDictionary *result = [[NSMutableDictionary alloc] init];
 
-  [result setObject:errorCode forKey:@"errorCode"];
+  [result setObject:[NSNumber numberWithInteger:errorCode] forKey:@"errorCode"];
   [result setObject:message forKey:@"message"];
 
   return result;
