@@ -6,14 +6,13 @@
     <name>Cordova Plugin Braintree</name>
     <description></description>
     <license>MIT</license>
-    <keywords>cordova,braintree</keywords>
+    <keywords>cordova,plugin,braintree</keywords>
     <repo>https://github.com/NickMele/cordova-plugin-braintree.git</repo>
     <issue>https://github.com/NickMele/cordova-plugin-braintree/issues</issue>
 
-    <js-module src="www/Braintree.js" name="Braintree">
+    <js-module src="www/BraintreePlugin.js" name="BraintreePlugin">
       <runs/>
-
-      <clobbers target="plugins.Braintree" />
+      <clobbers target="BraintreePlugin" />
     </js-module>
 
     <!-- android -->
@@ -51,7 +50,6 @@
       <config-file target="config.xml" parent="/*">
         <feature name="BraintreePlugin">
           <param name="ios-package" value="BraintreePlugin" />
-          <param name="onload" value="true" />
         </feature>
       </config-file>
 

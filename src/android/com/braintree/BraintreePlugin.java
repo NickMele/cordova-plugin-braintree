@@ -31,13 +31,22 @@ import android.app.Activity;
 import java.util.Date;
 
 public class BraintreePlugin extends CordovaPlugin {
-
   private static final String TAG = "BraintreePlugin";
+
+  public static final int ERROR_PLUGIN_NOT_INITIALIZED = 1;
+  public static final int ERROR_INITIALIZATION_ERROR = 2;
+  public static final int ERROR_VENMO_NOT_AVAILABLE = 3;
+  public static final int ERROR_AUTHORIZATION_ERROR = 4;
+  public static final int ERROR_USER_CANCELLED_AUTHORIZATION = 5;
+  public static final int ERROR_VENMO_NOT_ENABLED_FOR_MERCHANT = 6;
+
+  public static final String ACTION_INITIALIZE = "initialize";
+  public static final String ACTION_IS_VENMO_AVAILABLE = "isVenmoAvailable";
+  public static final String ACTION_AUTHORIZE_VENMO_ACCOUNT = "authorizeVenmoAccount";
 
   private boolean isAvailable = false;
   private boolean configurationFetched = false;
-  private Activity activity;
-  protected BraintreeFragment mBraintreeFragment;
+  private BraintreeFragment mBraintreeFragment;
   private CallbackContext availabilityCallbackContext;
   private CallbackContext venmoAuthorizationCallbackContext;
   private ConfigurationListener configurationListener;
@@ -46,9 +55,10 @@ public class BraintreePlugin extends CordovaPlugin {
   private BraintreeCancelListener braintreeCancelListener;
 
   @Override
-  protected void pluginInitialize() {
+  protected void initialize() {
+    super.initialize(CordovaInterface cordova, CordovaWebView webView);
+
     Log.d(TAG, "Starting Braintree Cordova Plugin");
-    activity = this.cordova.getActivity();
   }
 
   @Override
@@ -59,51 +69,59 @@ public class BraintreePlugin extends CordovaPlugin {
   }
 
   public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) throws JSONException {
-    if (action.equals("initialize")) {
-      String clientToken = args.getString(0);
-
-      createBraintreeFragment(clientToken, callbackContext);
-    } else if (action.equals("isVenmoAvailable")) {
-      Log.d(TAG, "Storing isVenmoAvailable callback for when configuration is fetched");
-      availabilityCallbackContext = callbackContext;
-
-      if (configurationFetched) {
-        sendAvailabilityUpdate();
-      }
-    } else if (action.equals("authorizeVenmoAccount")) {
-      if (mBraintreeFragment != null) {
-        Log.d(TAG, "Authorizing venmo account");
-
-        venmoAuthorizationCallbackContext = callbackContext;
-
-        cordova.getThreadPool().execute(new Runnable() {
-          public void run() {
-            Venmo.authorizeAccount(mBraintreeFragment, false);
-          }
-        });
-      } else {
-        Log.d(TAG, "No braintree fragment found");
-
-        callbackContext.error("This device cannot make venmo payments");
-      }
+    if (ACTION_INITIALIZE.equalsIgnoreCase(action)) {
+      createBraintreeFragment(args.getString(0), callbackContext);
+    } else if (ACTION_IS_VENMO_AVAILABLE.equalsIgnoreCase(action)) {
+      isVenmoAvailable(callbackContext);
+    } else if (ACTION_AUTHORIZE_VENMO_ACCOUNT.equalsIgnoreCase(action)) {
+      authorizeVenmoAccount(callbackContext);
     }
 
     return true;
+  }
+
+  private void isVenmoAvailable(CallbackContext callbackContext) {
+    Log.d(TAG, "Storing isVenmoAvailable callback for when configuration is fetched");
+
+    availabilityCallbackContext = callbackContext;
+
+    if (configurationFetched) {
+      sendAvailabilityUpdate();
+    }
+  }
+
+  private void authorizeVenmoAccount(CallbackContext callbackContext) {
+    if (mBraintreeFragment != null) {
+      Log.d(TAG, "Authorizing venmo account");
+
+      venmoAuthorizationCallbackContext = callbackContext;
+
+      cordova.getThreadPool().execute(new Runnable() {
+        public void run() {
+          Venmo.authorizeAccount(mBraintreeFragment, false);
+        }
+      });
+    } else {
+      Log.d(TAG, "No braintree fragment found");
+
+      callbackContext.error(getError(ERROR_PLUGIN_NOT_INITIALIZED));
+    }
   }
 
   private void createBraintreeFragment(String clientToken, CallbackContext callbackContext) {
     Log.d(TAG, "Creating braintree fragment");
 
     try {
+      Activity activity = this.cordova.getActivity();
       mBraintreeFragment = BraintreeFragment.newInstance(activity, clientToken);
+
+      addListeners();
+      callbackContext.success();
     } catch (InvalidArgumentException e) {
       Log.d(TAG, "Error creating braintree fragment: " + e.toString());
 
-      callbackContext.error(e.toString());
+      callbackContext.error(getError(ERROR_INITIALIZATION_ERROR, e.toString()));
     }
-
-    addListeners();
-    callbackContext.success();
   }
 
   private void addListeners() {
@@ -117,6 +135,7 @@ public class BraintreePlugin extends CordovaPlugin {
           btConfigurationFetched(configuration);
         }
       };
+
       mBraintreeFragment.addListener(configurationListener);
     }
 
@@ -128,6 +147,7 @@ public class BraintreePlugin extends CordovaPlugin {
           btPaymentMethodNonceCreated(paymentMethodNonce);
         }
       };
+
       mBraintreeFragment.addListener(paymentMethodNonceCreatedListener);
     }
 
@@ -139,6 +159,7 @@ public class BraintreePlugin extends CordovaPlugin {
           btError(error);
         }
       };
+
       mBraintreeFragment.addListener(braintreeErrorListener);
     }
 
@@ -150,6 +171,7 @@ public class BraintreePlugin extends CordovaPlugin {
           btCancel(requestCode);
         }
       };
+
       mBraintreeFragment.addListener(braintreeCancelListener);
     }
   }
@@ -177,12 +199,7 @@ public class BraintreePlugin extends CordovaPlugin {
     Log.d(TAG, "Sending venmo availability update to webview");
 
     if (availabilityCallbackContext != null) {
-      if (isAvailable) {
-        availabilityCallbackContext.success();
-      } else {
-        availabilityCallbackContext.error("This device cannot make venmo payments");
-      }
-
+      availabilityCallbackContext.success(isAvailable);
       availabilityCallbackContext = null;
     }
 
@@ -217,6 +234,7 @@ public class BraintreePlugin extends CordovaPlugin {
 
     if (paymentMethodNonce instanceof VenmoAccountNonce) {
       Log.d(TAG, "Nonce is a VenmoAccountNonce");
+
       VenmoAccountNonce venmoAccountNonce = (VenmoAccountNonce) paymentMethodNonce;
       String venmoUsername = venmoAccountNonce.getUsername();
 
@@ -228,7 +246,7 @@ public class BraintreePlugin extends CordovaPlugin {
           response.put("username", venmoUsername);
         } catch (JSONException e) {
           e.printStackTrace();
-          venmoAuthorizationCallbackContext.error("Unable to get authorization data");
+          venmoAuthorizationCallbackContext.error(getError(ERROR_AUTHORIZATION_ERROR, "There was an error processing the authorization data"));
           venmoAuthorizationCallbackContext = null;
           return;
         }
@@ -250,7 +268,7 @@ public class BraintreePlugin extends CordovaPlugin {
       Log.d(TAG, "Braintree is unable to switch to the Venmo app");
 
       if (venmoAuthorizationCallbackContext != null) {
-        venmoAuthorizationCallbackContext.error("Braintree is unable to switch to the Venmo app.");
+        venmoAuthorizationCallbackContext.error(getError(ERROR_AUTHORIZATION_ERROR, "Unable to switch to Venmo app"));
         venmoAuthorizationCallbackContext = null;
       }
     }
@@ -260,8 +278,25 @@ public class BraintreePlugin extends CordovaPlugin {
     Log.d(TAG, "User cancelled venmo request: " + requestCode);
 
     if (venmoAuthorizationCallbackContext != null) {
-      venmoAuthorizationCallbackContext.error("User cancelled venmo request");
+      venmoAuthorizationCallbackContext.error(getError(ERROR_USER_CANCELLED_AUTHORIZATION));
       venmoAuthorizationCallbackContext = null;
     }
+  }
+
+  private JSONObject getError(int errorCode) {
+    JSONObject result = new JSONObject();
+
+    result.put("errorCode", errorCode);
+
+    return result;
+  }
+
+  private JSONObject getError(int errorCode, String message) {
+    JSONObject result = new JSONObject();
+
+    result.put("errorCode", errorCode);
+    result.put("message", message);
+
+    return result;
   }
 }

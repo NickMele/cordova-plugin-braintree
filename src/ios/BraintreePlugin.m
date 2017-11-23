@@ -1,6 +1,12 @@
 #import "BraintreePlugin.h"
-
 #import <Cordova/CDVAvailability.h>
+
+static short int *const ERROR_PLUGIN_NOT_INITIALIZED = 1;
+static short int *const ERROR_INITIALIZATION_ERROR = 2;
+static short int *const ERROR_VENMO_NOT_AVAILABLE = 3;
+static short int *const ERROR_AUTHORIZATION_ERROR = 4;
+static short int *const ERROR_USER_CANCELLED_AUTHORIZATION = 5;
+static short int *const ERROR_VENMO_NOT_ENABLED_FOR_MERCHANT = 6;
 
 @implementation BraintreePlugin
 
@@ -40,7 +46,14 @@
   NSLog(@"Setting apiClient and venmoDriver");
 
   self.apiClient = [[BTAPIClient alloc] initWithAuthorization:clientToken];
-  self.venmoDriver = [[BTVenmoDriver alloc] initWithAPIClient:self.apiClient];
+
+  if (self.apiClient) {
+    self.venmoDriver = [[BTVenmoDriver alloc] initWithAPIClient:self.apiClient];
+  } else {
+    NSLog(@"Failed to initialize the API Client");
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:[self getErrorMessage:ERROR_INITIALIZATION_ERROR message:@"Failed to initialize the API Client"]];
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+  }
 }
 
 - (void)isVenmoAvailable:(CDVInvokedUrlCommand*)command {
@@ -51,12 +64,12 @@
       [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
     } else {
       NSLog(@"Venmo is not available on this device");
-      CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: @"This device cannot make venmo payments"];
+      CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:FALSE];
       [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
     }
   } else {
     NSLog(@"The venmoDriver could not be found");
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: @"This device cannot make venmo payments"];
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:[self getErrorMessage:ERROR_PLUGIN_NOT_INITIALIZED]];
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
   }
 }
@@ -78,19 +91,36 @@
         [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
       } else if (error) {
         NSLog(@"Error authorizing account: %@", error);
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.localizedDescription];
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:[self getErrorMessage:ERROR_AUTHORIZATION_ERROR message:error.localizedDescription]];
         [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
       } else {
         NSLog(@"User cancelled venmo request");
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"User cancelled venmo request"];
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:[self getErrorMessage:ERROR_USER_CANCELLED_AUTHORIZATION]];
         [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
       }
     }];
   } else {
     NSLog(@"The venmoDriver could not be found");
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString: @"This device cannot make venmo payments"];
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:[self getErrorMessage:ERROR_PLUGIN_NOT_INITIALIZED]];
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
   }
+}
+
+- (NSMutableDictionary *)getErrorMessage:(short int *)errorCode {
+  NSMutableDictionary *result = [[NSMutableDictionary alloc] init];
+
+  [result setObject:errorCode forKey:@"errorCode"];
+
+  return result;
+}
+
+- (NSMutableDictionary *)getErrorMessage:(short int *)errorCode message:(NSString *)message {
+  NSMutableDictionary *result = [[NSMutableDictionary alloc] init];
+
+  [result setObject:errorCode forKey:@"errorCode"];
+  [result setObject:message forKey:@"message"];
+
+  return result;
 }
 
 @end

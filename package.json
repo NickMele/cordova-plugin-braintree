@@ -8,5 +8,6 @@
       "ios"
     ]
   },
+  "repository": "https://github.com/NickMele/cordova-plugin-braintree",
   "description": "Cordova plugin for Braintree"
 }
