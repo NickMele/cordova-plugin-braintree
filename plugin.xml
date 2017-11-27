@@ -2,7 +2,7 @@
 
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
     id="cordova-plugin-braintree"
-    version="1.0.0">
+    version="1.0.1">
     <name>Cordova Plugin Braintree</name>
     <description></description>
     <license>MIT</license>
