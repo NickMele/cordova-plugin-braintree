@@ -29,6 +29,15 @@ var BraintreePlugin = {
       'authorizeVenmoAccount',
       []
     );
+  },
+  getDeviceData: function(success, failure) {
+    cordova.exec(
+      success,
+      failure,
+      PLUGIN_NAME,
+      'getDeviceData',
+      []
+    );
   }
 };
 

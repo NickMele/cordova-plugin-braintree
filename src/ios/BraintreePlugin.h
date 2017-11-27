@@ -2,6 +2,7 @@
 
 #import "BraintreeCore.h"
 #import "BraintreeVenmo.h"
+#import "PPDataCollector.h"
 
 @interface BraintreePlugin : CDVPlugin
 
@@ -13,5 +14,6 @@
 - (void)initialize:(CDVInvokedUrlCommand*)command;
 - (void)isVenmoAvailable:(CDVInvokedUrlCommand*)command;
 - (void)authorizeVenmoAccount:(CDVInvokedUrlCommand*)command;
+- (void)getDeviceData:(CDVInvokedUrlCommand*)command;
 
 @end

@@ -73,6 +73,25 @@ BraintreePlugin.authorizeVenmoAccount(function(paymentNonce) {
 
 ---
 
+### `getDeviceData(successFn, failureFn)`
+
+Will retrieve the device data used to create transactions
+
+#### `successFn` Parameters
+##### `@param {String} deviceData` String containing the device data
+#### `failureFn` Parameters
+##### `@param {Object} error`  Failed to initialize callback
+###### `@param {Integer} errorCode` Error code
+###### `@param {String} message` Additional message from the native plugin
+
+```javascript
+BraintreePlugin.getDeviceData(function(deviceData) {
+  // submit deviceData with transaction
+}, function(error) {});
+```
+
+---
+
 ## Error Codes
 | Code | Error |
 |------|-------|

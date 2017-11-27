@@ -14,12 +14,14 @@ import org.json.JSONException;
 
 import com.braintreepayments.api.BraintreeFragment;
 import com.braintreepayments.api.Venmo;
+import com.braintreepayments.api.DataCollector;
 import com.braintreepayments.api.exceptions.InvalidArgumentException;
 import com.braintreepayments.api.exceptions.AppSwitchNotAvailableException;
 import com.braintreepayments.api.interfaces.ConfigurationListener;
 import com.braintreepayments.api.interfaces.PaymentMethodNonceCreatedListener;
 import com.braintreepayments.api.interfaces.BraintreeCancelListener;
 import com.braintreepayments.api.interfaces.BraintreeErrorListener;
+import com.braintreepayments.api.interfaces.BraintreeResponseListener;
 import com.braintreepayments.api.models.Configuration;
 import com.braintreepayments.api.models.PaymentMethodNonce;
 import com.braintreepayments.api.models.VenmoAccountNonce;
@@ -43,6 +45,7 @@ public class BraintreePlugin extends CordovaPlugin {
   public static final String ACTION_INITIALIZE = "initialize";
   public static final String ACTION_IS_VENMO_AVAILABLE = "isVenmoAvailable";
   public static final String ACTION_AUTHORIZE_VENMO_ACCOUNT = "authorizeVenmoAccount";
+  public static final String ACTION_GET_DEVICE_DATA = "getDeviceData";
 
   private boolean isAvailable = false;
   private boolean configurationFetched = false;
@@ -75,6 +78,8 @@ public class BraintreePlugin extends CordovaPlugin {
       isVenmoAvailable(callbackContext);
     } else if (ACTION_AUTHORIZE_VENMO_ACCOUNT.equalsIgnoreCase(action)) {
       authorizeVenmoAccount(callbackContext);
+    } else if (ACTION_GET_DEVICE_DATA.equalsIgnoreCase(action)) {
+      getDeviceData(callbackContext);
     }
 
     return true;
@@ -99,6 +104,25 @@ public class BraintreePlugin extends CordovaPlugin {
       cordova.getThreadPool().execute(new Runnable() {
         public void run() {
           Venmo.authorizeAccount(mBraintreeFragment, false);
+        }
+      });
+    } else {
+      Log.d(TAG, "No braintree fragment found");
+
+      callbackContext.error(getError(ERROR_PLUGIN_NOT_INITIALIZED));
+    }
+  }
+
+  private void getDeviceData(CallbackContext callbackContext) {
+    if (mBraintreeFragment != null) {
+      cordova.getThreadPool().execute(new Runnable() {
+        public void run() {
+          DataCollector.collectDeviceData(mBraintreeFragment, new BraintreeResponseListener<String>() {
+            @Override
+            public void onResponse(String deviceData) {
+              callbackContext.success(deviceData);
+            }
+          });
         }
       });
     } else {

@@ -109,6 +109,13 @@ static NSInteger const ERROR_VENMO_NOT_ENABLED_FOR_MERCHANT = 6;
   }
 }
 
+- (void)getDeviceData:(CDVInvokedUrlCommand*)command {
+  NSString *deviceData = [PPDataCollector collectPayPalDeviceData];
+
+  CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:deviceData];
+  [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+}
+
 - (NSMutableDictionary *)getErrorMessage:(NSUInteger)errorCode {
   NSMutableDictionary *result = [[NSMutableDictionary alloc] init];
 
