@@ -199,7 +199,7 @@ public class BraintreePlugin extends CordovaPlugin {
     Log.d(TAG, "Sending venmo availability update to webview");
 
     if (availabilityCallbackContext != null) {
-      availabilityCallbackContext.success(isAvailable);
+      availabilityCallbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, isAvailable));
       availabilityCallbackContext = null;
     }
 
