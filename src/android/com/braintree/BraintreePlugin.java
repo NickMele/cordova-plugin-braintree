@@ -55,8 +55,8 @@ public class BraintreePlugin extends CordovaPlugin {
   private BraintreeCancelListener braintreeCancelListener;
 
   @Override
-  protected void initialize() {
-    super.initialize(CordovaInterface cordova, CordovaWebView webView);
+  public void initialize(CordovaInterface cordova, CordovaWebView webView) {
+    super.initialize(cordova, webView);
 
     Log.d(TAG, "Starting Braintree Cordova Plugin");
   }
