@@ -286,7 +286,11 @@ public class BraintreePlugin extends CordovaPlugin {
   private JSONObject getError(int errorCode) {
     JSONObject result = new JSONObject();
 
-    result.put("errorCode", errorCode);
+    try {
+      result.put("errorCode", errorCode);
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
 
     return result;
   }
@@ -294,8 +298,12 @@ public class BraintreePlugin extends CordovaPlugin {
   private JSONObject getError(int errorCode, String message) {
     JSONObject result = new JSONObject();
 
-    result.put("errorCode", errorCode);
-    result.put("message", message);
+    try {
+      result.put("errorCode", errorCode);
+      result.put("message", message);
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
 
     return result;
   }
