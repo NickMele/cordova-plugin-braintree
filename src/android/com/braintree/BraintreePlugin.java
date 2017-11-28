@@ -113,7 +113,7 @@ public class BraintreePlugin extends CordovaPlugin {
     }
   }
 
-  private void getDeviceData(CallbackContext callbackContext) {
+  private void getDeviceData(final CallbackContext callbackContext) {
     if (mBraintreeFragment != null) {
       cordova.getThreadPool().execute(new Runnable() {
         public void run() {
