@@ -41,8 +41,8 @@
 
     <!-- ios -->
     <platform name="ios">
-      <framework src="Braintree/Core" type="podspec" spec="~> 4.9.5" />
-      <framework src="Braintree/Venmo" type="podspec" spec="~> 4.9.5" />
+      <framework src="Braintree/Core" type="podspec" spec="~> 4.12.0" />
+      <framework src="Braintree/Venmo" type="podspec" spec="~> 4.12.0" />
 
       <header-file src="src/ios/BraintreePlugin.h" />
       <source-file src="src/ios/BraintreePlugin.m" />
