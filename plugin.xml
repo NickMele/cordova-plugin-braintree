@@ -2,7 +2,7 @@
 
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
     id="cordova-plugin-braintree"
-    version="1.0.3">
+    version="1.0.4">
     <name>Cordova Plugin Braintree</name>
     <description></description>
     <license>MIT</license>
@@ -23,7 +23,7 @@
         </feature>
       </config-file>
 
-      <config-file target="AndroidManifest.xml" parent="application">
+      <config-file target="app/src/main/AndroidManifest.xml" parent="application">
         <activity android:name="com.braintreepayments.api.BraintreeBrowserSwitchActivity" android:launchMode="singleTask">
           <intent-filter>
             <action android:name="android.intent.action.VIEW" />
